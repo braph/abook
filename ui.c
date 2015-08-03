@@ -37,6 +37,13 @@
 #include "abook_rl.h"
 
 /*
+ * external functions
+
+extern int
+opt_get_int(enum int_opts opt);
+ */
+
+/*
  * external variables
  */
 
@@ -419,7 +426,7 @@ ui_readline(const char *prompt, char *s, size_t limit, bool use_completion)
 int
 statusline_ask_boolean(const char *msg, int def)
 {
-	int ret;
+	int ret = -1;
 	char *msg2 = strconcat(msg,  def ? _(" (Y/n)?") : _(" (y/N)?"), NULL);
 	char ch;
 
@@ -427,14 +434,18 @@ statusline_ask_boolean(const char *msg, int def)
 
 	free(msg2);
 
-	ch = tolower(getch());
+   do
+   {
+      ch = tolower(getch());
 
-	if(ch == *(S_("keybinding for no|n")))
-		ret = FALSE;
-	else if(ch == *(S_("keybinding for yes|y")))
-		ret = TRUE;
-	else
-		ret = def;
+      if(ch == *(S_("keybinding for no|n")))
+         ret = FALSE;
+      else if(ch == *(S_("keybinding for yes|y")))
+         ret = TRUE;
+      else if(ch == '\r')
+         ret = def;
+   }
+   while(ret == -1);
 
 	clear_statusline();
 
@@ -562,88 +573,105 @@ get_commands()
 				}
 			}
 		}
-		switch(ch) {
-			case 'q': return;
-			case 'Q': quit_abook(QUIT_DONTSAVE);	break;
-			case 'P': print_stderr(selected_items() ?
-						  -1 : list_get_curitem());
-				  return;
-			case '?':
+
+      if(ch == opt_get_int(KEYINT_QUIT_WITH_SAVE))
+         return;
+      else if(ch == opt_get_int(KEYINT_QUIT_WITHOUT_SAVE))
+			quit_abook(QUIT_DONTSAVE);
+      else if(ch == opt_get_int(KEYINT_PRINT_TO_STDOUT)) {
+			print_stderr(selected_items() ? -1 : list_get_curitem());
+         return;
+      }
+      else if(ch == opt_get_int(KEYINT_PRINT_HELP)) {
 				  display_help(HELP_MAIN);
 				  refresh_screen();
-				  break;
-			case 'a': add_item();		break;
-			case '\r': edit_item(-1);	break;
-			case KEY_DC:
-			case 'd':
-			case 'r': ui_remove_items();	break;
-			case 'M': ui_merge_items();	break;
-			case 'D': duplicate_item();	break;
-			case 'U': ui_remove_duplicates(); break;
-			case 12: refresh_screen();	break;
-
-			case 'k':
-			case KEY_UP: scroll_up();	break;
-			case 'j':
-			case KEY_DOWN: scroll_down();	break;
-			case 'K':
-			case KEY_PPAGE: page_up();	break;
-			case 'J':
-			case KEY_NPAGE: page_down();	break;
-
-			case 'g':
-			case KEY_HOME: goto_home();	break;
-			case 'G':
-			case KEY_END: goto_end();	break;
-
-			case 'w': save_database();
-				  break;
-			case 'l': ui_read_database();	break;
-			case 'i': import_database();	break;
-			case 'e': export_database();	break;
-			case 'C': ui_clear_database();	break;
-
-			case 'o': ui_open_datafile();	break;
-
-			case 's': sort_by_field("name");break;
-			case 'S': sort_surname();	break;
-			case 'F': sort_by_field(NULL);	break;
-
-			case '/': ui_find(0);		break;
-			case 'n':
-			case '\\': ui_find(1);		break;
-
-			case ' ': if(list_get_curitem() >= 0) {
-				   list_invert_curitem_selection();
-				   ui_print_number_of_items();
-				   refresh_list();
-				  }
-				break;
-			case '+': select_all();
-				  refresh_list();
-				break;
-			case '-': select_none();
-				  refresh_list();
-				break;
-			case '*': invert_selection();
-				  refresh_list();
-				 break;
-			case 'A': move_curitem(MOVE_ITEM_UP);
-				break;
-			case 'Z': move_curitem(MOVE_ITEM_DOWN);
-				break;
-
-			case 'm': launch_mutt(selected_items() ?
-						  -1 : list_get_curitem());
-				  refresh_screen();
-				  break;
-
-			case 'p': ui_print_database(); break;
-
-			case 'v': launch_wwwbrowser(list_get_curitem());
-				  refresh_screen();
-				  break;
-		}
+      }
+      else if(ch == opt_get_int(KEYINT_ADD_ITEM))
+			add_item();
+      else if(ch == '\r')
+			edit_item(-1);
+      else if(ch == KEY_DC || ch == opt_get_int(KEYINT_REMOVE_ITEMS)) {
+			ui_remove_items();
+      }
+      else if(ch == opt_get_int(KEYINT_MERGE_ITEMS))
+			ui_merge_items();
+      else if(ch == opt_get_int(KEYINT_DULICATE_ITEM))
+         duplicate_item();
+      else if(ch == opt_get_int(KEYINT_REMOVE_DUPLICATES))
+         ui_remove_duplicates();
+      else if(ch == 12 || ch == opt_get_int(KEYINT_REFRESH_SCREEN))
+         refresh_screen();
+      else if(ch == KEY_UP || ch == opt_get_int(KEYINT_SCROLL_UP))
+         scroll_up();
+      else if(ch == KEY_DOWN || ch == opt_get_int(KEYINT_SCROLL_DOWN))
+         scroll_down();
+      else if(ch == KEY_PPAGE || ch == opt_get_int(KEYINT_PAGE_UP))
+         page_up();
+      else if(ch == KEY_NPAGE || ch == opt_get_int(KEYINT_PAGE_DOWN))
+         page_down();
+      else if(ch == KEY_HOME || ch == opt_get_int(KEYINT_GOTO_HOME))
+         goto_home();
+      else if(ch == KEY_END || ch == opt_get_int(KEYINT_GOTO_END))
+         goto_end();
+      else if(ch == opt_get_int(KEYINT_SAVE_DATABASE)) {
+         if (save_database() == 0)
+            statusline_msg(_("Database saved"));
+         else
+            statusline_msg(_("Error saving database"));
+      }
+      else if(ch == opt_get_int(KEYINT_READ_DATABASE))
+         ui_read_database();
+      else if(ch == opt_get_int(KEYINT_IMPORT_DATABASE))
+         import_database();
+      else if(ch == opt_get_int(KEYINT_EXPORT_DATABASE))
+         export_database();
+      else if(ch == opt_get_int(KEYINT_CLEAR_DATABASE))
+         ui_clear_database();
+      else if(ch == opt_get_int(KEYINT_OPEN_DATAFILE))
+         ui_open_datafile();
+      else if(ch == opt_get_int(KEYINT_SORT_BY_FIELD))
+         sort_by_field("name");
+      else if(ch == opt_get_int(KEYINT_SORT_BY_SURNAME))
+         sort_surname();
+      else if(ch == opt_get_int(KEYINT_SORT_BY_FIELD_NULL)) // 'F'
+         sort_by_field(NULL);
+      else if(ch == opt_get_int(KEYINT_FIND))
+         ui_find(0);
+      else if(ch == opt_get_int(KEYINT_FIND_NEXT))
+         ui_find(1);
+      else if(ch == ' ' || ch == opt_get_int(KEYINT_SELECT_ITEM)) {
+			if(list_get_curitem() >= 0) {
+            list_invert_curitem_selection();
+            ui_print_number_of_items();
+            refresh_list();
+         }
+      }
+      else if(ch == opt_get_int(KEYINT_SELECT_ALL)) {
+         select_all();
+         refresh_list();
+      }
+      else if(ch == opt_get_int(KEYINT_SELECT_NONE)) {
+         select_none();
+         refresh_list();
+      }
+      else if(ch == opt_get_int(KEYINT_INVERT_SELECTION)) {
+         invert_selection();
+         refresh_list();
+      }
+      else if(ch == opt_get_int(KEYINT_MOVE_ITEM_UP))
+			move_curitem(MOVE_ITEM_UP);
+      else if(ch == opt_get_int(KEYINT_MOVE_ITEM_DOWN))
+         move_curitem(MOVE_ITEM_DOWN);
+      else if(ch == opt_get_int(KEYINT_LAUCH_MUTT)) {
+			launch_mutt(selected_items() ? -1 : list_get_curitem());
+         refresh_screen();
+      }
+      else if(ch == opt_get_int(KEYINT_PRINT_DATABASE))
+			ui_print_database();
+      else if(ch == opt_get_int(KEYINT_LAUCH_WWWBROWSER)) {
+			launch_wwwbrowser(list_get_curitem());
+			refresh_screen();
+      }
 	}
 }
 

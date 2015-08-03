@@ -723,28 +723,40 @@ edit_loop(int item)
 
 	/* No uppercase nor numeric key should be used in this menu,
 	 * as they are reserved for field selection */
-	switch(c) {
-		case 'h':
-		case KEY_LEFT: tab = tab == 0 ? views_count - 1 : tab - 1;
-			       break;
-		case 'l':
-		case KEY_RIGHT: tab = tab == views_count - 1 ? 0 : tab + 1;
-				break;
-		case KEY_UP:
-		case '<':
-		case 'k': if(is_valid_item(item - 1)) item--; break;
-		case KEY_DOWN:
-		case '>':
-		case 'j': if(is_valid_item(item + 1)) item++; break;
-		case 'r': roll_emails(item, ROTATE_LEFT); break;
-		case '?': display_help(HELP_EDITOR); break;
-		case 'u': item = edit_undo(item, RESTORE_ITEM); break;
-		case 'm': launch_mutt(item); clearok(stdscr, 1); break;
-		case 'v': launch_wwwbrowser(item); clearok(stdscr, 1); break;
-		case 12 : clearok(stdscr, 1); break; /* ^L (refresh screen) */
-		case 'q': return -1;
-		default: edit_field(tab, c, item);
-	}
+   if(c == KEY_LEFT || c == opt_get_int(KEYINT_EDITOR_LEFT))
+      tab = tab == 0 ? views_count - 1 : tab - 1;
+   else if(c == KEY_RIGHT || c == opt_get_int(KEYINT_EDITOR_RIGHT))
+		tab = tab == views_count - 1 ? 0 : tab + 1;
+   else if(c == KEY_UP || c == opt_get_int(KEYINT_EDITIR_UP))
+   {
+		if(is_valid_item(item - 1)) item--;
+   }
+   else if(c == KEY_DOWN || c == opt_get_int(KEYINT_EDITOR_DOWN))
+   {
+		if(is_valid_item(item + 1)) item++;
+   }
+   else if(c == opt_get_int(KEYINT_EDITOR_ROLL_EMAILS))
+		roll_emails(item, ROTATE_LEFT);
+   else if(c == opt_get_int(KEYINT_EDITOR_HELP))
+		display_help(HELP_EDITOR);
+   else if(c == opt_get_int(KEYINT_EDITOR_UNDO))
+		item = edit_undo(item, RESTORE_ITEM);
+   else if(c == opt_get_int(KEYINT_EDITOR_LAUNCH_MUTT))
+   {
+		launch_mutt(item);
+      clearok(stdscr, 1);
+   }
+   else if(c == opt_get_int(KEYINT_EDITOR_LAUNCH_WWWBROWSER))
+   {
+		launch_wwwbrowser(item);
+      clearok(stdscr, 1);
+   }
+   else if(c == 12 || c == opt_get_int(KEYINT_EDITOR_REFRESH_SCREEN))
+		clearok(stdscr, 1);
+   else if(c == opt_get_int(KEYINT_EDITOR_QUIT))
+      return -1;
+   else
+		edit_field(tab, c, item);
 
 	return item;
 }

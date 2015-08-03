@@ -36,7 +36,8 @@
 enum opt_type {
 	OT_BOOL,
 	OT_STR,
-	OT_INT
+	OT_INT,
+   OT_KEYINT
 };
 
 struct option {
@@ -90,6 +91,56 @@ static struct option abook_vars[] = {
 	{ "color_field_name_bg", OT_STR, STR_COLOR_FIELD_NAME_BG, UL "default" },
 	{ "color_field_value_fg", OT_STR, STR_COLOR_FIELD_VALUE_FG, UL "green" },
 	{ "color_field_value_bg", OT_STR, STR_COLOR_FIELD_VALUE_BG, UL "default" },
+
+   { "key_quit_with_save", OT_KEYINT, KEYINT_QUIT_WITH_SAVE, 'q' },
+   { "key_quit_without_save", OT_KEYINT, KEYINT_QUIT_WITHOUT_SAVE, 'Q' },
+   { "key_print_to_stdout", OT_KEYINT, KEYINT_PRINT_TO_STDOUT, 'P' },
+   { "key_print_help", OT_KEYINT, KEYINT_PRINT_HELP, '?' },
+   { "key_add_item", OT_KEYINT, KEYINT_ADD_ITEM, 'a' },
+   { "key_remove_items", OT_KEYINT, KEYINT_REMOVE_ITEMS, 'd' },
+   { "key_merge_items", OT_KEYINT, KEYINT_MERGE_ITEMS, 'M' },
+   { "key_dulicate_item", OT_KEYINT, KEYINT_DULICATE_ITEM, 'D' },
+   { "key_remove_duplicates", OT_KEYINT, KEYINT_REMOVE_DUPLICATES, 'U' },
+   { "key_refresh_screen", OT_KEYINT, KEYINT_REFRESH_SCREEN, 'L' },
+   { "key_scroll_up", OT_KEYINT, KEYINT_SCROLL_UP, 'k' },
+   { "key_scroll_down", OT_KEYINT, KEYINT_SCROLL_DOWN, 'j' },
+   { "key_page_up", OT_KEYINT, KEYINT_PAGE_UP, 'K' },
+   { "key_page_down", OT_KEYINT, KEYINT_PAGE_DOWN, 'J' },
+   { "key_goto_home", OT_KEYINT, KEYINT_GOTO_HOME, 'g' },
+   { "key_goto_end", OT_KEYINT, KEYINT_GOTO_END, 'G' },
+   { "key_save_database", OT_KEYINT, KEYINT_SAVE_DATABASE, 'w' },
+   { "key_read_database", OT_KEYINT, KEYINT_READ_DATABASE, 'l' },
+   { "key_import_database", OT_KEYINT, KEYINT_IMPORT_DATABASE, 'i' },
+   { "key_export_database", OT_KEYINT, KEYINT_EXPORT_DATABASE, 'e' },
+   { "key_clear_database", OT_KEYINT, KEYINT_CLEAR_DATABASE, 'C' },
+   { "key_open_datafile", OT_KEYINT, KEYINT_OPEN_DATAFILE, 'o' },
+   { "key_sort_by_field", OT_KEYINT, KEYINT_SORT_BY_FIELD, 's' },
+   { "key_sort_by_surname", OT_KEYINT, KEYINT_SORT_BY_SURNAME, 'S' },
+   { "key_sort_by_field_null", OT_KEYINT, KEYINT_SORT_BY_FIELD_NULL, 'F' },
+   { "key_find", OT_KEYINT, KEYINT_FIND, '/' },
+   { "key_find_next", OT_KEYINT, KEYINT_FIND_NEXT, 'n' },
+   { "key_select_item", OT_KEYINT, KEYINT_SELECT_ITEM, ' ' },
+   { "key_select_all", OT_KEYINT, KEYINT_SELECT_ALL, '+' },
+   { "key_select_none", OT_KEYINT, KEYINT_SELECT_NONE, '-' },
+   { "key_invert_selection", OT_KEYINT, KEYINT_INVERT_SELECTION, '*' },
+   { "key_move_item_up", OT_KEYINT, KEYINT_MOVE_ITEM_UP, 'A' },
+   { "key_move_item_down", OT_KEYINT, KEYINT_MOVE_ITEM_DOWN, 'Z' },
+   { "key_lauch_mutt", OT_KEYINT, KEYINT_LAUCH_MUTT, 'm' },
+   { "key_print_database", OT_KEYINT, KEYINT_PRINT_DATABASE, 'p' },
+   { "key_lauch_wwwbrowser", OT_KEYINT, KEYINT_LAUCH_WWWBROWSER, 'v' },
+
+   { "key_editor_left", OT_KEYINT, KEYINT_EDITOR_LEFT, 'h' },
+   { "key_editor_right", OT_KEYINT, KEYINT_EDITOR_RIGHT, 'l' },
+   { "key_editir_up", OT_KEYINT, KEYINT_EDITIR_UP, 'k' },
+   { "key_editor_down", OT_KEYINT, KEYINT_EDITOR_DOWN, 'j' },
+   { "key_editor_roll_emails", OT_KEYINT, KEYINT_EDITOR_ROLL_EMAILS, 'r' },
+   { "key_editor_help", OT_KEYINT, KEYINT_EDITOR_HELP, '?' },
+   { "key_editor_undo", OT_KEYINT, KEYINT_EDITOR_UNDO, 'u' },
+   { "key_editor_launch_mutt", OT_KEYINT, KEYINT_EDITOR_LAUNCH_MUTT, 'm' },
+   { "key_editor_launch_wwwbrowser", OT_KEYINT, KEYINT_EDITOR_LAUNCH_WWWBROWSER, 'v' },
+   { "key_editor_refresh", OT_KEYINT, KEYINT_EDITOR_REFRESH_SCREEN, 'L' },
+   { "key_editor_quit", OT_KEYINT, KEYINT_EDITOR_QUIT, 'q' },
+
 	{ NULL }
 };
 
@@ -158,6 +209,9 @@ restore_default(struct option *p)
 		case OT_INT:
 			set_int(p -> data, (int)p -> init);
 			break;
+      case OT_KEYINT:
+         set_int(p -> data, (int)p -> init);
+         break;
 		case OT_STR:
 			if(p -> init)
 				set_str(p -> data, (char *) p -> init);
@@ -320,6 +374,9 @@ opt_set_set_option(char *p, struct option *opt)
 		case OT_INT:
 			set_int(opt -> data, safe_atoi(p));
 			break;
+      case OT_KEYINT:
+         set_int(opt -> data, *p);
+         break;
 		case OT_BOOL:
 			if(!strcasecmp(p, "true") || !strcasecmp(p, "on"))
 				set_bool(opt -> data, TRUE);
